@@ -48,17 +48,38 @@
           </a>
         </li>
         <li class="nav-item">
+          <a class="nav-link {% if request.endpoint and 'quote' in request.endpoint %}active{% endif %}"
+             href="{{ url_for('subscriptions.quotes_list') }}">
+            <i class="bi bi-file-earmark-text"></i> Quotations
+          </a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link {% if request.endpoint and 'invoice' in request.endpoint %}active{% endif %}"
              href="{{ url_for('subscriptions.invoices_list') }}">
             <i class="bi bi-receipt"></i> Invoices
           </a>
         </li>
+        {% if current_user.role.value in ['Admin', 'Staff'] %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint and 'price_request' in request.endpoint %}active{% endif %}"
+             href="{{ url_for('subscriptions.price_requests_list') }}">
+            <i class="bi bi-tag"></i> Price Requests
+          </a>
+        </li>
+        {% endif %}
         {# Person 3 adds: Payments nav item here #}
         {# Person 1 adds: Products, Plans, Users nav items here #}
         {% endif %}
       </ul>
-      <ul class="navbar-nav ms-auto">
+      <ul class="navbar-nav ms-auto align-items-center">
         {% if current_user.is_authenticated %}
+        {% if current_user.role.value == 'Customer' %}
+        <li class="nav-item me-2">
+          <a class="btn btn-warning btn-sm text-dark fw-semibold" href="{{ url_for('subscriptions.quote_request') }}">
+            <i class="bi bi-tag-fill"></i> Request a Quote
+          </a>
+        </li>
+        {% endif %}
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
             <i class="bi bi-person-circle"></i> {{ current_user.name }}

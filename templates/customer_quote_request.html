@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Request a Quote{% endblock %}
+
+{% block extra_css %}
+<style>
+  .product-card {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .quote-hero {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+
+    <!-- Hero Banner -->
+    <div class="quote-hero shadow-sm">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <h2 class="fw-bold mb-2"><i class="bi bi-tag-fill"></i> Request a Custom Quote</h2>
+          <p class="mb-0 fs-6 opacity-90">
+            Need special enterprise pricing, multi-seat discounts, or custom billing terms? 
+            Select your preferred plan and products below. Our sales team will review your requirements and send you a custom tailored quote.
+          </p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+          <span class="badge bg-light text-primary fs-6 px-3 py-2">
+            <i class="bi bi-shield-check"></i> Best Price Guarantee
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quote Request Form -->
+    <form method="POST" action="{{ url_for('subscriptions.quote_request') }}">
+      <div class="row g-4">
+
+        <!-- Plan Selection & Business Needs -->
+        <div class="col-md-6">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-white py-3">
+              <h5 class="mb-0 fw-bold"><i class="bi bi-1-circle text-primary"></i> Choose Your Billing Plan</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-4">
+                <label for="plan_id" class="form-label fw-semibold">Subscription Plan <span class="text-danger">*</span></label>
+                <select name="plan_id" id="plan_id" class="form-select form-select-lg" required>
+                  <option value="">— Select Plan Tier —</option>
+                  {% for p in plans %}
+                  <option value="{{ p.id }}" {% if form_data.get('plan_id') == p.id|string %}selected{% endif %}>
+                    {{ p.name }} ({{ p.billing_frequency }}) — Base: ₹{{ "%.2f"|format(p.price) }}
+                  </option>
+                  {% endfor %}
+                </select>
+                <div class="form-text">Choose how frequently you would like to be billed (monthly or annually).</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="notes" class="form-label fw-semibold">Your Requirements & Budget Expectations</label>
+                <textarea class="form-control" id="notes" name="notes" rows="4"
+                          placeholder="e.g. We have 25 team members starting next month. Looking for volume pricing and quarterly payment terms...">{{ form_data.get('notes', '') }}</textarea>
+                <div class="form-text">Share your expected seat count, timeframe, or special requests so we can offer our best price.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Products & Quantities -->
+        <div class="col-md-6">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+              <h5 class="mb-0 fw-bold"><i class="bi bi-2-circle text-primary"></i> Products & Quantity</h5>
+              <button type="button" class="btn btn-sm btn-outline-primary" id="add-product-btn">
+                <i class="bi bi-plus-lg"></i> Add Another Product
+              </button>
+            </div>
+            <div class="card-body">
+              <div id="product-rows-container">
+                <div class="product-card" id="product-template">
+                  <div class="row g-2 align-items-end">
+                    <div class="col-8">
+                      <label class="form-label fw-semibold small">Product <span class="text-danger">*</span></label>
+                      <select name="product_id[]" class="form-select product-select" required>
+                        <option value="">— Select Product —</option>
+                        {% for prod in products %}
+                        <option value="{{ prod.id }}">
+                          {{ prod.name }} (List: ₹{{ "%.2f"|format(prod.sales_price) }})
+                        </option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-3">
+                      <label class="form-label fw-semibold small">Seats / Qty <span class="text-danger">*</span></label>
+                      <input type="number" name="quantity[]" class="form-control qty-input" value="1" min="1" step="1" required>
+                    </div>
+                    <div class="col-1 text-end">
+                      <button type="button" class="btn btn-outline-danger btn-sm remove-row-btn" title="Remove">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="alert alert-light border small mt-3">
+                <i class="bi bi-info-circle text-primary"></i> 
+                <strong>How it works:</strong> Once you submit, our sales team reviews your request. You'll receive a tailored Quotation with custom discounts directly in your portal to review and accept.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="text-end mt-4 d-flex justify-content-between align-items-center">
+        <a href="{{ url_for('subscriptions.quotes_list') }}" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left"></i> Back to My Quotes
+        </a>
+        <button type="submit" class="btn btn-success btn-lg px-4">
+          <i class="bi bi-send-check"></i> Submit Quote Request
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function attachRowEvents(row) {
+  row.querySelector('.remove-row-btn').addEventListener('click', function() {
+    const rows = document.querySelectorAll('.product-card');
+    if (rows.length > 1) {
+      row.remove();
+      updateRemoveButtons();
+    }
+  });
+}
+
+function updateRemoveButtons() {
+  const rows = document.querySelectorAll('.product-card');
+  rows.forEach(r => {
+    r.querySelector('.remove-row-btn').style.display = rows.length > 1 ? 'inline-block' : 'none';
+  });
+}
+
+attachRowEvents(document.getElementById('product-template'));
+updateRemoveButtons();
+
+document.getElementById('add-product-btn').addEventListener('click', function() {
+  const template = document.getElementById('product-template');
+  const clone = template.cloneNode(true);
+  clone.removeAttribute('id');
+  clone.querySelector('.product-select').value = '';
+  clone.querySelector('.qty-input').value = '1';
+  document.getElementById('product-rows-container').appendChild(clone);
+  attachRowEvents(clone);
+  updateRemoveButtons();
+});
+</script>
+{% endblock %}
+

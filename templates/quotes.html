@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Quotations{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0"><i class="bi bi-file-earmark-text"></i> Quotations</h4>
+  {% if current_user.role.value in ['Admin', 'Staff'] %}
+  <a href="{{ url_for('subscriptions.quote_new') }}" class="btn btn-primary">
+    <i class="bi bi-plus-lg"></i> New Quotation
+  </a>
+  {% else %}
+  <a href="{{ url_for('subscriptions.quote_request') }}" class="btn btn-success">
+    <i class="bi bi-send-plus"></i> Request a Custom Quote
+  </a>
+  {% endif %}
+</div>
+
+{% if quotes %}
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Quote #</th>
+          <th>Customer</th>
+          <th>Plan</th>
+          <th>Valid From</th>
+          <th>Valid Until</th>
+          <th class="text-end">Subtotal</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for q in quotes %}
+        {% set badge_map = {
+          'Draft': 'secondary',
+          'Sent': 'info',
+          'Accepted': 'primary',
+          'Rejected': 'danger',
+          'Converted': 'success'
+        } %}
+        <tr>
+          <td>
+            <a href="{{ url_for('subscriptions.quote_detail', quo_id=q.id) }}"
+               class="fw-semibold text-decoration-none">
+              {{ q.quotation_number }}
+            </a>
+          </td>
+          <td>{{ q.customer.name }}</td>
+          <td>{{ q.plan.name }}</td>
+          <td>{{ q.valid_from.strftime('%d %b %Y') if q.valid_from else '—' }}</td>
+          <td>
+            {% if q.valid_until %}
+              {% if q.is_expired and q.status.value not in ['Converted', 'Rejected'] %}
+                <span class="text-danger fw-semibold">{{ q.valid_until.strftime('%d %b %Y') }} (Expired)</span>
+              {% else %}
+                {{ q.valid_until.strftime('%d %b %Y') }}
+              {% endif %}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td class="text-end">₹{{ "%.2f"|format(q.subtotal) }}</td>
+          <td>
+            <span class="badge bg-{{ badge_map[q.status.value] }}">
+              {{ q.status.value }}
+            </span>
+          </td>
+          <td class="text-end">
+            <a href="{{ url_for('subscriptions.quote_detail', quo_id=q.id) }}"
+               class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-eye"></i> View
+            </a>
+            {% if q.status.value == 'Converted' and q.subscription %}
+            <a href="{{ url_for('subscriptions.subscription_detail', sub_id=q.subscription.id) }}"
+               class="btn btn-sm btn-outline-success" title="View Subscription">
+              <i class="bi bi-journal-check"></i> Sub
+            </a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+  <i class="bi bi-file-earmark-break" style="font-size:3rem;"></i>
+  <p class="mt-2">No quotations found.</p>
+  {% if current_user.role.value in ['Admin', 'Staff'] %}
+  <a href="{{ url_for('subscriptions.quote_new') }}" class="btn btn-primary mt-2">
+    Create first quotation
+  </a>
+  {% else %}
+  <a href="{{ url_for('subscriptions.quote_request') }}" class="btn btn-success mt-2">
+    <i class="bi bi-send-plus"></i> Request your first quote
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
