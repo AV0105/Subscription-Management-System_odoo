@@ -64,6 +64,18 @@
             </div>
           </div>
 
+          <div class="mb-3">
+            <label for="billing_day" class="form-label">
+              <i class="bi bi-calendar-event"></i> Billing Day of Month
+            </label>
+            <input type="number" class="form-control" id="billing_day" name="billing_day"
+                   min="1" max="28" placeholder="e.g. 1 or 15 (Optional)"
+                   value="{{ form_data.get('billing_day', '') }}">
+            <div class="form-text">
+              Day of month (1–28) when recurring invoices are automatically issued. Leave blank to bill on demand.
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

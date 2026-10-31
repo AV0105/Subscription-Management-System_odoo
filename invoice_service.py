@@ -262,7 +262,11 @@ def generate_invoice(subscription_id: int) -> Invoice:
 
     # ─── Begin atomic transaction ───────────────────────────────────
     try:
-        issue_date = date.today()
+        # Respect billing_day if set on the subscription
+        if hasattr(subscription, "next_billing_date") and subscription.billing_day:
+            issue_date = subscription.next_billing_date()
+        else:
+            issue_date = date.today()
         due_date = _calculate_due_date(issue_date)
 
         # 6 & 7. Calculate subtotal from subscription lines (Decimal)

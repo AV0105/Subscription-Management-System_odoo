@@ -29,7 +29,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
   <div class="container-fluid">
-    <a class="navbar-brand" href="/dashboard">
+    <a class="navbar-brand" href="{{ url_for('dashboard.dashboard') if current_user.is_authenticated and current_user.role|string|lower in ['admin', 'staff'] else url_for('subscriptions.subscriptions_list') }}">
       <i class="bi bi-arrow-repeat"></i> Brightloop
     </a>
 
@@ -41,34 +41,48 @@
 
     <div class="collapse navbar-collapse" id="mainNavigation">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        {% set user_role = current_user.role|string|lower %}
+        {% if current_user.is_authenticated %}
+          {% set user_role = current_user.role|string|lower %}
 
-        <!-- ADMIN & STAFF NAVIGATION -->
-        {% if user_role in ['admin', 'staff'] %}
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">Dashboard</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('catalog.products_list') }}">Products</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('support.customer_directory') }}">Customers</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('catalog.plans_list') }}">Plans</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('subscriptions.subscriptions_list') }}">All Subscriptions</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('payments.payment_list') }}">Payments</a></li>
-        {% endif %}
+          <!-- ADMIN & STAFF NAVIGATION -->
+          {% if user_role in ['admin', 'staff'] %}
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'dashboard' in request.endpoint %}active{% endif %}" href="{{ url_for('dashboard.dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'catalog.products' in request.endpoint %}active{% endif %}" href="{{ url_for('catalog.products_list') }}"><i class="bi bi-box-seam"></i> Products</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'support' in request.endpoint %}active{% endif %}" href="{{ url_for('support.customer_directory') }}"><i class="bi bi-people"></i> Customers</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'catalog.plans' in request.endpoint %}active{% endif %}" href="{{ url_for('catalog.plans_list') }}"><i class="bi bi-card-list"></i> Plans</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'subscriptions' in request.endpoint and 'my' not in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.subscriptions_list') }}"><i class="bi bi-journal-check"></i> Subscriptions</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'quote' in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.quotes_list') }}"><i class="bi bi-file-earmark-text"></i> Quotations</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'invoice' in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.invoices_list') }}"><i class="bi bi-receipt"></i> Invoices</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'price_request' in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.price_requests_list') }}"><i class="bi bi-tag"></i> Price Requests</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'payments' in request.endpoint %}active{% endif %}" href="{{ url_for('payments.payment_list') }}"><i class="bi bi-credit-card"></i> Payments</a></li>
+          {% endif %}
 
-        <!-- CUSTOMER NAVIGATION -->
-        {% if user_role == 'customer' %}
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('subscriptions.my_portal') }}">My Portal</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('subscriptions.marketplace') }}">Marketplace</a></li>
+          <!-- CUSTOMER NAVIGATION -->
+          {% if user_role == 'customer' %}
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'my_portal' in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.my_portal') }}"><i class="bi bi-person-workspace"></i> My Portal</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'marketplace' in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.marketplace') }}"><i class="bi bi-shop"></i> Marketplace</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'quote' in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.quotes_list') }}"><i class="bi bi-file-earmark-text"></i> My Quotes</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'invoice' in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.invoices_list') }}"><i class="bi bi-receipt"></i> My Invoices</a></li>
+          {% endif %}
         {% endif %}
       </ul>
 
       <div class="d-flex align-items-center gap-2 flex-wrap">
         {% if current_user.is_authenticated %}
-          <a class="btn btn-success btn-sm" href="/payments/new">
-            <i class="bi bi-plus-circle"></i> Record Payment
-          </a>
+          {% set user_role = current_user.role|string|lower %}
+          {% if user_role == 'customer' %}
+            <a class="btn btn-warning btn-sm text-dark fw-semibold" href="{{ url_for('subscriptions.quote_request') }}">
+              <i class="bi bi-tag-fill"></i> Request a Quote
+            </a>
+          {% elif user_role in ['admin', 'staff'] %}
+            <a class="btn btn-success btn-sm" href="/payments/new">
+              <i class="bi bi-plus-circle"></i> Record Payment
+            </a>
+          {% endif %}
           <span class="navbar-text text-light">
             {{ current_user.name or current_user.email }}
             {% if current_user.role %}
-              <span class="badge text-bg-secondary ms-1">{{ current_user.role.value }}</span>
+              <span class="badge text-bg-secondary ms-1">{{ current_user.role.value if current_user.role.value is defined else current_user.role }}</span>
             {% endif %}
           </span>
           <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.logout') }}">
