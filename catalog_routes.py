@@ -6,6 +6,20 @@ from decimal import Decimal
 
 catalog_bp = Blueprint('catalog', __name__)
 
+from flask_login import current_user
+from functools import wraps
+from flask import abort
+
+def admin_or_staff_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Safely get role as lowercase string (handles Enums or Strings)
+        role = str(current_user.role).lower()
+        if role not in ['admin', 'staff']:
+            abort(403)  # Blocks the user immediately
+        return f(*args, **kwargs)
+    return decorated_function
+
 # --- PRODUCTS ---
 @catalog_bp.route('/products')
 @login_required
@@ -15,6 +29,7 @@ def products_list():
 
 @catalog_bp.route('/products/new', methods=['POST'])
 @login_required
+@admin_or_staff_required
 def product_create():
     try:
         name = request.form.get('name')
@@ -41,6 +56,7 @@ def plans_list():
 
 @catalog_bp.route('/plans/new', methods=['POST'])
 @login_required
+@admin_or_staff_required
 def plan_create():
     try:
         name = request.form.get('name')

@@ -5,39 +5,43 @@
     <h2>Subscription Plans</h2>
     
     <!-- Add Plan Form -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-primary text-white">Add New Plan</div>
-        <div class="card-body">
-            <form method="POST" action="{{ url_for('catalog.plan_create') }}">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-3">
-                        <label class="form-label">Plan Name</label>
-                        <input type="text" name="name" class="form-control" required>
+    {% set user_role = current_user.role|string|lower %}
+
+    {% if user_role in ['admin', 'staff'] %}
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-primary text-white">Add New Plan</div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('catalog.plan_create') }}">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">Plan Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Billing Frequency</label>
+                            <select name="billing_frequency" class="form-select">
+                                <option>Monthly</option>
+                                <option>Yearly</option>
+                                <option>Weekly</option>
+                                <option>Daily</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Min Quantity</label>
+                            <input type="number" name="minimum_quantity" class="form-control" value="1" min="1">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Price</label>
+                            <input type="number" step="0.01" name="price" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-success w-100">Add Plan</button>
+                        </div>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Billing Frequency</label>
-                        <select name="billing_frequency" class="form-select">
-                            <option>Monthly</option>
-                            <option>Yearly</option>
-                            <option>Weekly</option>
-                            <option>Daily</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Min Quantity</label>
-                        <input type="number" name="minimum_quantity" class="form-control" value="1" min="1">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Price</label>
-                        <input type="number" step="0.01" name="price" class="form-control" required>
-                    </div>
-                    <div class="col-md-3">
-                        <button type="submit" class="btn btn-success w-100">Add Plan</button>
-                    </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
-    </div>
+    {% endif %}
 
     <!-- Plans Table -->
     <div class="card shadow-sm">

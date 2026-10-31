@@ -5,38 +5,42 @@
     <h2>Products Catalog</h2>
     
     <!-- Add Product Form -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-primary text-white">Add New Product</div>
-        <div class="card-body">
-            <form method="POST" action="{{ url_for('catalog.product_create') }}">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-3">
-                        <label class="form-label">Name</label>
-                        <input type="text" name="name" class="form-control" required>
+    {% set user_role = current_user.role|string|lower %}
+
+    {% if user_role in ['admin', 'staff'] %}
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-primary text-white">Add New Product</div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('catalog.product_create') }}">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Type</label>
+                            <input type="text" name="product_type" class="form-control" value="Service">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Sales Price</label>
+                            <input type="number" step="0.01" name="sales_price" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Cost Price</label>
+                            <input type="number" step="0.01" name="cost_price" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-success w-100">Add Product</button>
+                        </div>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Type</label>
-                        <input type="text" name="product_type" class="form-control" value="Service">
+                    <div class="mt-2">
+                        <label class="form-label">Notes</label>
+                        <input type="text" name="notes" class="form-control" placeholder="Optional notes">
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Sales Price</label>
-                        <input type="number" step="0.01" name="sales_price" class="form-control" required>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Cost Price</label>
-                        <input type="number" step="0.01" name="cost_price" class="form-control" value="0">
-                    </div>
-                    <div class="col-md-3">
-                        <button type="submit" class="btn btn-success w-100">Add Product</button>
-                    </div>
-                </div>
-                <div class="mt-2">
-                    <label class="form-label">Notes</label>
-                    <input type="text" name="notes" class="form-control" placeholder="Optional notes">
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
-    </div>
+    {% endif %}
 
     <!-- Products Table -->
     <div class="card shadow-sm">

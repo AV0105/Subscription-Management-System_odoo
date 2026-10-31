@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}My Portal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Welcome, {{ current_user.name }}</h2>
+    <p class="text-muted">Here is an overview of your active subscriptions and recent invoices.</p>
+
+    <!-- My Subscriptions -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">My Subscriptions</div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Subscription #</th>
+                        <th>Plan</th>
+                        <th>Status</th>
+                        <th>Expiry Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in subscriptions %}
+                    <tr>
+                        <td><strong>{{ sub.subscription_number }}</strong></td>
+                        <td>{{ sub.plan.name }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if sub.status|string == 'Active' else 'secondary' }}">
+                                {{ sub.status }}
+                            </span>
+                        </td>
+                        <td>{{ sub.expiry_date }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="text-center text-muted py-3">You have no active subscriptions.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- My Invoices -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-info text-white">My Invoices</div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in invoices %}
+                    <tr>
+                        <td><strong>{{ inv.invoice_number }}</strong></td>
+                        <td>{{ inv.issue_date }}</td>
+                        <td>{{ inv.due_date }}</td>
+                        <td>${{ "%.2f"|format(inv.total) }}</td>
+                        <td>
+                            {% if inv.status|string == 'Paid' %}
+                                <span class="badge bg-success">Paid</span>
+                            {% elif inv.status|string == 'Cancelled' %}
+                                <span class="badge bg-danger">Cancelled</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-3">No invoices found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

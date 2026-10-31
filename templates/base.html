@@ -41,42 +41,21 @@
 
     <div class="collapse navbar-collapse" id="mainNavigation">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link {% if request.path == '/dashboard' %}active{% endif %}"
-             href="/dashboard">
-            <i class="bi bi-speedometer2"></i> Dashboard
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.path.startswith('/payments') %}active{% endif %}"
-             href="/payments">
-            <i class="bi bi-credit-card"></i> Payments
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.path.startswith('/products') %}active{% endif %}"
-             href="/products">
-            <i class="bi bi-box-seam"></i> Products
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.path.startswith('/plans') %}active{% endif %}"
-             href="/plans">
-            <i class="bi bi-card-list"></i> Plans
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.path.startswith('/subscriptions') %}active{% endif %}"
-             href="/subscriptions">
-            <i class="bi bi-journal-check"></i> Subscriptions
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.path.startswith('/invoices') %}active{% endif %}"
-             href="/invoices">
-            <i class="bi bi-receipt"></i> Invoices
-          </a>
-        </li>
+        {% set user_role = current_user.role|string|lower %}
+
+        <!-- ADMIN & STAFF NAVIGATION -->
+        {% if user_role in ['admin', 'staff'] %}
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('catalog.products_list') }}">Products</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('catalog.plans_list') }}">Plans</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('subscriptions.subscriptions_list') }}">All Subscriptions</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('payments.payment_list') }}">Payments</a></li>
+        {% endif %}
+
+        <!-- CUSTOMER NAVIGATION -->
+        {% if user_role == 'customer' %}
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('subscriptions.my_portal') }}">My Portal</a></li>
+        {% endif %}
       </ul>
 
       <div class="d-flex align-items-center gap-2 flex-wrap">

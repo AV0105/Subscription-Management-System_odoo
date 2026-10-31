@@ -456,3 +456,15 @@ def invoice_cancel(inv_id):
     flash(f"Invoice {invoice.invoice_number} has been cancelled.", "success")
     return redirect(url_for("subscriptions.invoices_list"))
 
+@subscription_bp.route('/my-portal')
+@login_required
+def my_portal():
+    """Customer portal: shows only the logged-in user's data."""
+    my_subs = Subscription.query.filter_by(customer_id=current_user.id).all()
+    my_invoices = Invoice.query.filter_by(customer_id=current_user.id).order_by(Invoice.issue_date.desc()).all()
+    
+    return render_template(
+        'customer_portal.html', 
+        subscriptions=my_subs, 
+        invoices=my_invoices
+    )
