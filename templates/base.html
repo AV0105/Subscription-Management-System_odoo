@@ -47,6 +47,7 @@
         {% if user_role in ['admin', 'staff'] %}
             <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">Dashboard</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('catalog.products_list') }}">Products</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('support.customer_directory') }}">Customers</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('catalog.plans_list') }}">Plans</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('subscriptions.subscriptions_list') }}">All Subscriptions</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('payments.payment_list') }}">Payments</a></li>

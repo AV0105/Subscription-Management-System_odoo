@@ -71,6 +71,9 @@ def create_app(config_name: str = None) -> Flask:
     from person3_routes import register_person3_routes
     register_person3_routes(app)
 
+    from support_routes import support_bp
+    app.register_blueprint(support_bp)
+
     # ── Root redirect ──────────────────────────────────────────────
     @app.route("/")
     def index():
