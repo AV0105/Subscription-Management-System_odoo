@@ -198,7 +198,8 @@ def payment_new():
         if not invoice:
             flash('Invoice not found.', 'danger')
             return redirect(url_for('payments.payment_new'))
-
+        
+        current_status = invoice.status.value if hasattr(invoice.status, 'value') else str(invoice.status)
         if invoice.status not in ALLOWED_PAYMENT_STATUSES:
             flash('Payments can only be recorded for confirmed unpaid invoices.', 'danger')
             return redirect(url_for('payments.payment_new', invoice_id=invoice.id))
@@ -255,7 +256,11 @@ def payment_new():
             outstanding_after = _outstanding_amount(invoice)
 
             if outstanding_after <= Decimal('0.00'):
-                invoice.status = 'Paid'
+                try:
+                    from models import InvoiceStatus
+                    invoice.status = InvoiceStatus.PAID
+                except ImportError:
+                    invoice.status = 'Paid'
 
             db.session.commit()
 

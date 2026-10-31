@@ -296,7 +296,11 @@ def _sync_invoice_status(invoice):
     outstanding = invoice_total - paid_amount
 
     if outstanding <= Decimal('0.00'):
-        invoice.status = 'Paid'
+        try:
+          from models import InvoiceStatus
+          invoice.status = InvoiceStatus.PAID
+        except ImportError:
+          invoice.status = 'Paid'
     elif invoice.status not in ('Draft', 'Cancelled'):
         invoice.status = 'Confirmed'
 
