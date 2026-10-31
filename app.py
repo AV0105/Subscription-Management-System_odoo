@@ -59,6 +59,8 @@ def create_app(config_name: str = None) -> Flask:
     # Person 1 will replace/expand auth_routes.py
     from auth_routes import auth_bp
     app.register_blueprint(auth_bp)
+    from catalog_routes import catalog_bp
+    app.register_blueprint(catalog_bp)
     from person3_routes import register_person3_routes
     register_person3_routes(app)
     # Person 1 adds catalog_routes when ready:

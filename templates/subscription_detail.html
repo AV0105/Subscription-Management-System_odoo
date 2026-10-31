@@ -154,7 +154,7 @@
             <tr>
               <td>
                 <span class="fw-semibold">{{ line.product.name if line.product else 'Unknown Product' }}</span>
-                {% set pr = line.price_requests.order_by(line.price_requests.property.mapper.class.created_at.desc()).first() %}
+                {% set pr = line.price_requests.all() | sort(attribute='created_at', reverse=true) | first %}
                 {% if pr %}
                   <div class="small mt-1">
                     {% if pr.status.value == 'Pending' %}
@@ -192,7 +192,7 @@
                           <div class="mb-3">
                             <label class="form-label">Your Proposed Price (₹) <span class="text-danger">*</span></label>
                             <input type="number" step="0.01" min="0" max="{{ line.unit_price }}" name="requested_price"
-                                   class="form-control" placeholder="e.g. {{ line.unit_price * 0.9 }}" required>
+                                   class="form-control" placeholder="e.g. {{ (line.unit_price|float * 0.9)|round(2) }}" required>
                             <div class="form-text">Enter the unit price you would like to pay.</div>
                           </div>
                           <div class="mb-3">
