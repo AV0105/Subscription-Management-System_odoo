@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Marketplace{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Software Marketplace</h2>
+    <p class="text-muted">Browse our available software products and select a billing plan to subscribe instantly.</p>
+
+    <div class="row">
+        {% for product in products %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm border-primary">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">{{ product.name }}</h5>
+                    <p class="card-text text-muted small">{{ product.notes or 'Enterprise-grade software solution.' }}</p>
+                    <h4 class="text-success">${{ "%.2f"|format(product.sales_price) }} <small class="text-muted fs-6">/ base price</small></h4>
+                    
+                    <hr>
+                    
+                    <form method="POST" action="{{ url_for('subscriptions.customer_subscribe') }}">
+                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Choose Billing Plan:</label>
+                            <select name="plan_id" class="form-select" required>
+                                {% for plan in plans %}
+                                    <option value="{{ plan.id }}">
+                                        {{ plan.name }} ({{ plan.billing_frequency }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-cart-plus"></i> Subscribe Now
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">No products are currently available in the marketplace.</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

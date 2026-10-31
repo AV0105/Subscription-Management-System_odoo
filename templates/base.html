@@ -55,6 +55,7 @@
         <!-- CUSTOMER NAVIGATION -->
         {% if user_role == 'customer' %}
             <li class="nav-item"><a class="nav-link" href="{{ url_for('subscriptions.my_portal') }}">My Portal</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('subscriptions.marketplace') }}">Marketplace</a></li>
         {% endif %}
       </ul>
 

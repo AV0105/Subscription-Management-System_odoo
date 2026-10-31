@@ -25,14 +25,28 @@
                         <td><strong>{{ sub.subscription_number }}</strong></td>
                         <td>{{ sub.plan.name }}</td>
                         <td>
-                            <span class="badge bg-{{ 'success' if sub.status|string == 'Active' else 'secondary' }}">
-                                {{ sub.status }}
-                            </span>
+                            {% set status_str = sub.status|string %}
+                            {% if status_str == 'Active' or status_str == 'CONFIRMED' %}
+                                <span class="badge bg-success">Active</span>
+                            {% elif status_str == 'Closed' or status_str == 'CLOSED' %}
+                                <span class="badge bg-secondary">Cancelled</span>
+                            {% else %}
+                                <span class="badge bg-info">{{ sub.status }}</span>
+                            {% endif %}
                         </td>
                         <td>{{ sub.expiry_date }}</td>
+                        <td class="text-end">
+                            {% if status_str != 'Closed' and status_str != 'CLOSED' %}
+                                <form method="POST" action="{{ url_for('subscriptions.customer_unsubscribe', sub_id=sub.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this subscription?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Unsubscribe</button>
+                                </form>
+                            {% else %}
+                                <span class="text-muted small">N/A</span>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="4" class="text-center text-muted py-3">You have no active subscriptions.</td></tr>
+                    <tr><td colspan="5" class="text-center text-muted py-3">You have no subscriptions. <a href="{{ url_for('subscriptions.marketplace') }}">Visit the Marketplace</a></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

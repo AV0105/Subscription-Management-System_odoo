@@ -24,7 +24,7 @@ POST /invoices/<id>/cancel           — cancel invoice
 
 import logging
 from decimal import Decimal, ROUND_HALF_UP
-from datetime import date
+from datetime import date, timedelta
 
 from flask import (
     Blueprint,
@@ -37,6 +37,9 @@ from flask import (
     current_app,
 )
 from flask_login import login_required, current_user
+
+import uuid
+from models import Product, Plan, SubscriptionStatus # Add SubscriptionStatus
 
 from extensions import db
 from models import (
@@ -468,3 +471,81 @@ def my_portal():
         subscriptions=my_subs, 
         invoices=my_invoices
     )
+
+# --- CUSTOMER MARKETPLACE ---
+@subscription_bp.route('/marketplace')
+@login_required
+def marketplace():
+    """Customers browse available products and plans."""
+    products = Product.query.all()
+    plans = Plan.query.all()
+    return render_template('marketplace.html', products=products, plans=plans)
+
+# --- CUSTOMER SUBSCRIBE ACTION ---
+@subscription_bp.route('/subscribe', methods=['POST'])
+@login_required
+def customer_subscribe():
+    product_id = request.form.get('product_id', type=int)
+    plan_id = request.form.get('plan_id', type=int)
+
+    product = Product.query.get_or_404(product_id)
+    plan = Plan.query.get_or_404(plan_id)
+
+    # Generate unique subscription number
+    sub_number = f"SUB-{uuid.uuid4().hex[:6].upper()}"
+    today = date.today()
+    
+    # Safely handle Enum status
+    try:
+        active_status = SubscriptionStatus.ACTIVE
+    except Exception:
+        active_status = 'Active'
+
+    # 1. Create the Subscription
+    new_sub = Subscription(
+        subscription_number=sub_number,
+        customer_id=current_user.id,
+        plan_id=plan.id,
+        start_date=today,
+        expiry_date=today + timedelta(days=30), # MVP: Default 30-day billing cycle
+        status=active_status
+    )
+    db.session.add(new_sub)
+    db.session.flush() # Gets the new_sub.id before committing
+
+    # 2. Create the Subscription Line Item
+    qty = 1
+    price = product.sales_price
+    line_total = qty * price
+
+    new_line = SubscriptionLine(
+        subscription_id=new_sub.id,
+        product_id=product.id,
+        quantity=qty,
+        unit_price=price,
+        line_total=line_total
+    )
+    db.session.add(new_line)
+    db.session.commit()
+
+    flash(f'Successfully subscribed to {product.name}!', 'success')
+    return redirect(url_for('subscriptions.my_portal'))
+
+# --- CUSTOMER UNSUBSCRIBE ACTION ---
+@subscription_bp.route('/unsubscribe/<int:sub_id>', methods=['POST'])
+@login_required
+def customer_unsubscribe(sub_id):
+    sub = Subscription.query.get_or_404(sub_id)
+    
+    # Security: Ensure customer can only cancel their OWN subscription
+    if sub.customer_id != current_user.id:
+        abort(403) 
+        
+    try:
+        sub.status = SubscriptionStatus.CLOSED
+    except Exception:
+        sub.status = 'Closed'
+        
+    db.session.commit()
+    flash('Your subscription has been cancelled.', 'warning')
+    return redirect(url_for('subscriptions.my_portal'))
