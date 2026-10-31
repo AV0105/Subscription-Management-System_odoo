@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}New Subscription{% endblock %}
+
+{% block extra_css %}
+<style>
+  .line-row { background: #fff; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px; margin-bottom: 10px; }
+  #lines-container .line-row:first-child .remove-line { display: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4><i class="bi bi-journal-plus"></i> New Subscription</h4>
+  <a href="{{ url_for('subscriptions.subscriptions_list') }}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Back
+  </a>
+</div>
+
+<form method="POST" action="{{ url_for('subscriptions.subscription_new') }}" id="sub-form">
+  <div class="row g-3">
+
+    <!-- Customer & Plan -->
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header"><strong>Subscription Details</strong></div>
+        <div class="card-body">
+
+          <div class="mb-3">
+            <label for="customer_id" class="form-label">Customer <span class="text-danger">*</span></label>
+            <select name="customer_id" id="customer_id" class="form-select" required>
+              <option value="">— Select Customer —</option>
+              {% for c in customers %}
+              <option value="{{ c.id }}"
+                {% if form_data.get('customer_id') == c.id|string %}selected{% endif %}>
+                {{ c.name }} ({{ c.email }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="plan_id" class="form-label">Plan <span class="text-danger">*</span></label>
+            <select name="plan_id" id="plan_id" class="form-select" required>
+              <option value="">— Select Plan —</option>
+              {% for p in plans %}
+              <option value="{{ p.id }}"
+                {% if form_data.get('plan_id') == p.id|string %}selected{% endif %}>
+                {{ p.name }} — {{ p.billing_frequency }} — ₹{{ "%.2f"|format(p.price) }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="start_date" class="form-label">Start Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="start_date" name="start_date"
+                     value="{{ form_data.get('start_date', '') }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="expiry_date" class="form-label">Expiry Date</label>
+              <input type="date" class="form-control" id="expiry_date" name="expiry_date"
+                     value="{{ form_data.get('expiry_date', '') }}">
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Line Items -->
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong>Line Items</strong>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="add-line">
+            <i class="bi bi-plus-lg"></i> Add Line
+          </button>
+        </div>
+        <div class="card-body">
+          <div id="lines-container">
+            <!-- Template row (will be cloned by JS) -->
+            <div class="line-row" id="line-template">
+              <div class="row g-2 align-items-end">
+                <div class="col-12">
+                  <label class="form-label">Product <span class="text-danger">*</span></label>
+                  <select name="product_id[]" class="form-select product-select" required>
+                    <option value="">— Select Product —</option>
+                    {% for prod in products %}
+                    <option value="{{ prod.id }}" data-price="{{ prod.sales_price }}">
+                      {{ prod.name }} (₹{{ "%.2f"|format(prod.sales_price) }})
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-5">
+                  <label class="form-label">Quantity</label>
+                  <input type="number" name="quantity[]" class="form-control qty-input"
+                         value="1" min="1" step="1" required>
+                </div>
+                <div class="col-5">
+                  <label class="form-label">Unit Price (₹)</label>
+                  <input type="number" name="unit_price[]" class="form-control price-input"
+                         value="0.00" min="0" step="0.01" required>
+                </div>
+                <div class="col-2 text-end">
+                  <button type="button" class="btn btn-sm btn-outline-danger remove-line mt-4">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+                <div class="col-12 text-end">
+                  <small class="text-muted">
+                    Line total: <strong class="line-total-display">₹0.00</strong>
+                  </small>
+                </div>
+              </div>
+            </div>
+            <!-- /template -->
+          </div>
+
+          <div class="text-end mt-2 border-top pt-2">
+            <strong>Estimated Subtotal: <span id="subtotal-display">₹0.00</span></strong>
+            <br><small class="text-muted">Final amounts are verified server-side.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="mt-3 d-flex gap-2">
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-save"></i> Create Subscription
+    </button>
+    <a href="{{ url_for('subscriptions.subscriptions_list') }}" class="btn btn-outline-secondary">
+      Cancel
+    </a>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Line item management ──────────────────────────────────────────────────
+function updateLineTotals() {
+  let subtotal = 0;
+  document.querySelectorAll('.line-row').forEach(row => {
+    const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+    const price = parseFloat(row.querySelector('.price-input').value) || 0;
+    const total = qty * price;
+    row.querySelector('.line-total-display').textContent = '₹' + total.toFixed(2);
+    subtotal += total;
+  });
+  document.getElementById('subtotal-display').textContent = '₹' + subtotal.toFixed(2);
+}
+
+function attachLineEvents(row) {
+  row.querySelector('.qty-input').addEventListener('input', updateLineTotals);
+  row.querySelector('.price-input').addEventListener('input', updateLineTotals);
+
+  // Auto-fill price from product's data-price attribute
+  row.querySelector('.product-select').addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex];
+    const price = selected.getAttribute('data-price') || '0';
+    row.querySelector('.price-input').value = parseFloat(price).toFixed(2);
+    updateLineTotals();
+  });
+
+  row.querySelector('.remove-line').addEventListener('click', function() {
+    row.remove();
+    updateLineTotals();
+    // Always show remove on all rows when more than one row exists
+    toggleRemoveButtons();
+  });
+}
+
+function toggleRemoveButtons() {
+  const rows = document.querySelectorAll('.line-row');
+  rows.forEach(r => {
+    r.querySelector('.remove-line').style.display = rows.length > 1 ? 'inline-block' : 'none';
+  });
+}
+
+// Initial setup on page load
+attachLineEvents(document.getElementById('line-template'));
+toggleRemoveButtons();
+
+document.getElementById('add-line').addEventListener('click', function() {
+  const template = document.getElementById('line-template');
+  const clone = template.cloneNode(true);
+  clone.removeAttribute('id');
+  // Reset fields
+  clone.querySelector('.product-select').value = '';
+  clone.querySelector('.qty-input').value = '1';
+  clone.querySelector('.price-input').value = '0.00';
+  clone.querySelector('.line-total-display').textContent = '₹0.00';
+  document.getElementById('lines-container').appendChild(clone);
+  attachLineEvents(clone);
+  toggleRemoveButtons();
+});
+</script>
+{% endblock %}
+

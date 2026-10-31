@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}{{ subscription.subscription_number }}{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+  <div>
+    <h4 class="mb-0">
+      <i class="bi bi-journal-check"></i> {{ subscription.subscription_number }}
+    </h4>
+    <small class="text-muted">
+      Created {{ subscription.created_at.strftime('%d %b %Y %H:%M') }}
+    </small>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    {% set badge_map = {
+      'Draft': 'secondary',
+      'Confirmed': 'info',
+      'Active': 'success',
+      'Closed': 'dark'
+    } %}
+    <span class="badge bg-{{ badge_map[subscription.status.value] }} fs-6 px-3 py-2">
+      {{ subscription.status.value }}
+    </span>
+
+    {% if current_user.role.value in ['Admin', 'Staff'] %}
+
+      {# Draft → Confirm #}
+      {% if subscription.status.value == 'Draft' %}
+      <form method="POST"
+            action="{{ url_for('subscriptions.subscription_confirm', sub_id=subscription.id) }}">
+        <button class="btn btn-info text-white">
+          <i class="bi bi-check2-circle"></i> Confirm
+        </button>
+      </form>
+      {% endif %}
+
+      {# Confirmed → Activate #}
+      {% if subscription.status.value == 'Confirmed' %}
+      <form method="POST"
+            action="{{ url_for('subscriptions.subscription_activate', sub_id=subscription.id) }}">
+        <button class="btn btn-success">
+          <i class="bi bi-play-circle"></i> Activate
+        </button>
+      </form>
+      {% endif %}
+
+      {# Confirmed/Active → Generate Invoice #}
+      {% if subscription.status.value in ['Confirmed', 'Active'] %}
+        {% set existing_invoice = subscription.invoices.first() %}
+        {% if not existing_invoice %}
+        <form method="POST"
+              action="{{ url_for('subscriptions.subscription_generate_invoice', sub_id=subscription.id) }}"
+              onsubmit="return confirm('Generate invoice for {{ subscription.subscription_number }}?')">
+          <button class="btn btn-warning">
+            <i class="bi bi-receipt"></i> Generate Invoice
+          </button>
+        </form>
+        {% else %}
+        <a href="{{ url_for('subscriptions.invoice_detail', inv_id=existing_invoice.id) }}"
+           class="btn btn-outline-secondary">
+          <i class="bi bi-file-earmark-text"></i> View Invoice ({{ existing_invoice.invoice_number }})
+        </a>
+        {% endif %}
+      {% endif %}
+
+      {# Close #}
+      {% if subscription.status.value != 'Closed' %}
+      <form method="POST"
+            action="{{ url_for('subscriptions.subscription_close', sub_id=subscription.id) }}"
+            onsubmit="return confirm('Close this subscription? This cannot be undone.')">
+        <button class="btn btn-outline-dark">
+          <i class="bi bi-x-circle"></i> Close
+        </button>
+      </form>
+      {% endif %}
+
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Left: Summary -->
+  <div class="col-md-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header"><strong>Subscription Info</strong></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-5">Customer</dt>
+          <dd class="col-7">{{ subscription.customer.name }}<br>
+            <small class="text-muted">{{ subscription.customer.email }}</small>
+          </dd>
+
+          <dt class="col-5">Plan</dt>
+          <dd class="col-7">{{ subscription.plan.name }}<br>
+            <small class="text-muted">{{ subscription.plan.billing_frequency }}</small>
+          </dd>
+
+          <dt class="col-5">Start Date</dt>
+          <dd class="col-7">{{ subscription.start_date.strftime('%d %b %Y') }}</dd>
+
+          <dt class="col-5">Expiry Date</dt>
+          <dd class="col-7">
+            {{ subscription.expiry_date.strftime('%d %b %Y') if subscription.expiry_date else '—' }}
+          </dd>
+
+          <dt class="col-5">Status</dt>
+          <dd class="col-7">
+            <span class="badge bg-{{ badge_map[subscription.status.value] }}">
+              {{ subscription.status.value }}
+            </span>
+          </dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Line Items -->
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-header"><strong>Line Items</strong></div>
+      {% if subscription.lines %}
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th class="text-center">Qty</th>
+              <th class="text-end">Unit Price</th>
+              <th class="text-end">Line Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in subscription.lines %}
+            <tr>
+              <td>{{ line.product.name if line.product else 'Unknown Product' }}</td>
+              <td class="text-center">{{ line.quantity }}</td>
+              <td class="text-end">₹{{ "%.2f"|format(line.unit_price) }}</td>
+              <td class="text-end">₹{{ "%.2f"|format(line.line_total) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="table-light">
+            <tr class="total-row">
+              <td colspan="3" class="text-end"><strong>Subtotal</strong></td>
+              <td class="text-end"><strong>₹{{ "%.2f"|format(subscription.subtotal) }}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      {% else %}
+      <div class="card-body text-muted">No line items on this subscription.</div>
+      {% endif %}
+    </div>
+
+    <!-- Related Invoices -->
+    {% set invoices = subscription.invoices.all() %}
+    {% if invoices %}
+    <div class="card shadow-sm mt-3">
+      <div class="card-header"><strong>Invoices</strong></div>
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Issue Date</th>
+              <th>Due Date</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for inv in invoices %}
+            {% set inv_badge = {
+              'Draft': 'secondary',
+              'Confirmed': 'primary',
+              'Paid': 'success',
+              'Cancelled': 'danger'
+            } %}
+            <tr>
+              <td>{{ inv.invoice_number }}</td>
+              <td>{{ inv.issue_date.strftime('%d %b %Y') }}</td>
+              <td>{{ inv.due_date.strftime('%d %b %Y') }}</td>
+              <td>₹{{ "%.2f"|format(inv.total) }}</td>
+              <td>
+                <span class="badge bg-{{ inv_badge[inv.status.value] }}">
+                  {{ inv.status.value }}
+                </span>
+              </td>
+              <td>
+                <a href="{{ url_for('subscriptions.invoice_detail', inv_id=inv.id) }}"
+                   class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-eye"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="mt-3">
+  <a href="{{ url_for('subscriptions.subscriptions_list') }}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Subscriptions
+  </a>
+</div>
+{% endblock %}
+

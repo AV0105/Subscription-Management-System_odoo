@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}{{ invoice.invoice_number }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+
+    <!-- Action buttons -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <a href="{{ url_for('subscriptions.invoices_list') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Invoices
+      </a>
+      <div class="d-flex gap-2 flex-wrap">
+        {% if current_user.role.value in ['Admin', 'Staff'] %}
+
+          {% if invoice.status.value == 'Draft' %}
+          <form method="POST"
+                action="{{ url_for('subscriptions.invoice_confirm', inv_id=invoice.id) }}">
+            <button class="btn btn-primary">
+              <i class="bi bi-check2-circle"></i> Confirm Invoice
+            </button>
+          </form>
+          {% endif %}
+
+          {% if invoice.status.value in ['Draft', 'Confirmed'] %}
+          <form method="POST"
+                action="{{ url_for('subscriptions.invoice_cancel', inv_id=invoice.id) }}"
+                onsubmit="return confirm('Cancel this invoice? This cannot be undone.')">
+            <button class="btn btn-outline-danger">
+              <i class="bi bi-x-circle"></i> Cancel
+            </button>
+          </form>
+          {% endif %}
+
+          {# Person 3 adds the "Record Payment" button here #}
+
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Invoice Card -->
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+
+        <!-- Invoice Header -->
+        <div class="invoice-header pb-3">
+          <div class="row">
+            <div class="col-md-6">
+              <h3 class="text-primary fw-bold mb-0">
+                <i class="bi bi-arrow-repeat"></i> Brightloop Software
+              </h3>
+              <p class="text-muted mb-0">Subscription Management Platform</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+              <h4 class="fw-bold mb-1">INVOICE</h4>
+              <p class="mb-0 fs-5 text-primary fw-semibold">{{ invoice.invoice_number }}</p>
+              {% set badge_map = {
+                'Draft': 'secondary',
+                'Confirmed': 'primary',
+                'Paid': 'success',
+                'Cancelled': 'danger'
+              } %}
+              <span class="badge bg-{{ badge_map[invoice.status.value] }} fs-6 mt-1">
+                {{ invoice.status.value }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Billing info -->
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <h6 class="text-muted text-uppercase fw-semibold small mb-2">Bill To</h6>
+            <p class="mb-0 fw-semibold">{{ invoice.customer.name }}</p>
+            <p class="mb-0 text-muted">{{ invoice.customer.email }}</p>
+          </div>
+          <div class="col-md-6 text-md-end">
+            <table class="table table-sm table-borderless mb-0 ms-auto" style="width:auto;">
+              <tr>
+                <td class="text-muted pe-3">Subscription:</td>
+                <td>
+                  <a href="{{ url_for('subscriptions.subscription_detail', sub_id=invoice.subscription_id) }}">
+                    {{ invoice.subscription.subscription_number }}
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td class="text-muted pe-3">Issue Date:</td>
+                <td>{{ invoice.issue_date.strftime('%d %b %Y') }}</td>
+              </tr>
+              <tr>
+                <td class="text-muted pe-3">Due Date:</td>
+                <td class="fw-semibold">{{ invoice.due_date.strftime('%d %b %Y') }}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- Line Items -->
+        <div class="table-responsive mb-4">
+          <table class="table">
+            <thead class="table-light">
+              <tr>
+                <th>Description</th>
+                <th class="text-center">Qty</th>
+                <th class="text-end">Unit Price</th>
+                <th class="text-end">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for line in invoice.lines %}
+              <tr>
+                <td>{{ line.description }}</td>
+                <td class="text-center">{{ line.quantity }}</td>
+                <td class="text-end">₹{{ "%.2f"|format(line.unit_price) }}</td>
+                <td class="text-end">₹{{ "%.2f"|format(line.line_total) }}</td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="4" class="text-muted text-center">No line items.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Totals -->
+        <div class="row justify-content-end">
+          <div class="col-md-5">
+            <table class="table table-sm">
+              <tr>
+                <td>Subtotal</td>
+                <td class="text-end">₹{{ "%.2f"|format(invoice.subtotal) }}</td>
+              </tr>
+              {% if invoice.discount_amount > 0 %}
+              <tr class="text-success">
+                <td>Discount</td>
+                <td class="text-end">- ₹{{ "%.2f"|format(invoice.discount_amount) }}</td>
+              </tr>
+              {% endif %}
+              <tr>
+                <td>Tax (18%)</td>
+                <td class="text-end">₹{{ "%.2f"|format(invoice.tax_amount) }}</td>
+              </tr>
+              <tr class="table-light total-row border-top">
+                <td class="fw-bold fs-5">Total</td>
+                <td class="text-end fw-bold fs-5 text-primary">
+                  ₹{{ "%.2f"|format(invoice.total) }}
+                </td>
+              </tr>
+            </table>
+
+            {# Person 3 adds: outstanding balance display here #}
+            {# Person 3 adds: "Record Payment" button here #}
+
+          </div>
+        </div>
+
+        <!-- Notes / Footer -->
+        <hr>
+        <p class="text-muted small mb-0">
+          <i class="bi bi-info-circle"></i>
+          Payment is due by <strong>{{ invoice.due_date.strftime('%d %b %Y') }}</strong>.
+          Please reference invoice number <strong>{{ invoice.invoice_number }}</strong>
+          in all correspondence.
+        </p>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+

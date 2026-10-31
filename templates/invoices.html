@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Invoices{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0"><i class="bi bi-receipt"></i> Invoices</h4>
+</div>
+
+{% if invoices %}
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Invoice #</th>
+          <th>Customer</th>
+          <th>Subscription</th>
+          <th>Issue Date</th>
+          <th>Due Date</th>
+          <th class="text-end">Total</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in invoices %}
+        {% set badge_map = {
+          'Draft': 'secondary',
+          'Confirmed': 'primary',
+          'Paid': 'success',
+          'Cancelled': 'danger'
+        } %}
+        <tr>
+          <td>
+            <a href="{{ url_for('subscriptions.invoice_detail', inv_id=inv.id) }}"
+               class="fw-semibold text-decoration-none">
+              {{ inv.invoice_number }}
+            </a>
+          </td>
+          <td>{{ inv.customer.name }}</td>
+          <td>
+            <a href="{{ url_for('subscriptions.subscription_detail', sub_id=inv.subscription_id) }}">
+              {{ inv.subscription.subscription_number }}
+            </a>
+          </td>
+          <td>{{ inv.issue_date.strftime('%d %b %Y') }}</td>
+          <td>
+            {% set today = now().date() if now is defined else none %}
+            {% if inv.status.value not in ['Paid', 'Cancelled'] and inv.due_date < inv.issue_date %}
+              <span class="text-danger fw-semibold">{{ inv.due_date.strftime('%d %b %Y') }}</span>
+            {% else %}
+              {{ inv.due_date.strftime('%d %b %Y') }}
+            {% endif %}
+          </td>
+          <td class="text-end">₹{{ "%.2f"|format(inv.total) }}</td>
+          <td>
+            <span class="badge bg-{{ badge_map[inv.status.value] }} status-badge">
+              {{ inv.status.value }}
+            </span>
+          </td>
+          <td class="text-end">
+            <a href="{{ url_for('subscriptions.invoice_detail', inv_id=inv.id) }}"
+               class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-eye"></i> View
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+  <i class="bi bi-receipt-cutoff" style="font-size:3rem;"></i>
+  <p class="mt-2">No invoices yet. Generate one from a confirmed subscription.</p>
+  <a href="{{ url_for('subscriptions.subscriptions_list') }}" class="btn btn-outline-primary mt-2">
+    View Subscriptions
+  </a>
+</div>
+{% endif %}
+{% endblock %}
+
