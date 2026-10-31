@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Customer Directory{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Customer Directory</h2>
+        <span class="badge bg-info text-dark">Internal Staff View</span>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('support.customer_directory') }}">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Search by name or email..." value="{{ search }}">
+                    <button class="btn btn-primary" type="submit">Search</button>
+                    {% if search %}
+                    <a href="{{ url_for('support.customer_directory') }}" class="btn btn-outline-secondary">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer List -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Joined</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in customers %}
+                    <tr>
+                        <td><strong>{{ c.name }}</strong></td>
+                        <td>{{ c.email }}</td>
+                        <td>{{ c.created_at.strftime('%Y-%m-%d') if c.created_at else 'N/A' }}</td>
+                        <td class="text-end">
+                            <a href="{{ url_for('support.customer_profile', user_id=c.id) }}" class="btn btn-sm btn-outline-primary">
+                                View Profile & Billing
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="text-center text-muted py-4">No customers found matching "{{ search }}".</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

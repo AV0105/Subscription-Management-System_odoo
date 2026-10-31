@@ -48,6 +48,7 @@
           {% if user_role in ['admin', 'staff'] %}
             <li class="nav-item"><a class="nav-link {% if request.endpoint and 'dashboard' in request.endpoint %}active{% endif %}" href="{{ url_for('dashboard.dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
             <li class="nav-item"><a class="nav-link {% if request.endpoint and 'catalog.products' in request.endpoint %}active{% endif %}" href="{{ url_for('catalog.products_list') }}"><i class="bi bi-box-seam"></i> Products</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'support' in request.endpoint %}active{% endif %}" href="{{ url_for('support.customer_directory') }}"><i class="bi bi-people"></i> Customers</a></li>
             <li class="nav-item"><a class="nav-link {% if request.endpoint and 'catalog.plans' in request.endpoint %}active{% endif %}" href="{{ url_for('catalog.plans_list') }}"><i class="bi bi-card-list"></i> Plans</a></li>
             <li class="nav-item"><a class="nav-link {% if request.endpoint and 'subscriptions' in request.endpoint and 'my' not in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.subscriptions_list') }}"><i class="bi bi-journal-check"></i> Subscriptions</a></li>
             <li class="nav-item"><a class="nav-link {% if request.endpoint and 'quote' in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.quotes_list') }}"><i class="bi bi-file-earmark-text"></i> Quotations</a></li>
