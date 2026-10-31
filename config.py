@@ -28,10 +28,7 @@ class Config:
     # If DATABASE_URL is defined in .env (e.g. MySQL for production/Person 1),
     # use it. Otherwise, default to local SQLite so developers can run and test
     # immediately without needing an active MySQL service running.
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL",
-        "sqlite:///brightloop.db",
-    )
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root@127.0.0.1:3306/subscription_db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_recycle": 280,          # recycle connections before MySQL wait_timeout

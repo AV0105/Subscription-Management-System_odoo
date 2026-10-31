@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+            <h2 class="mb-0">Dashboard</h2>
+            <div class="text-muted small">
+                Overview as of {{ today }}
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-primary btn-sm"
+               href="{{ url_for('payments.payment_list') }}">
+                Payments
+            </a>
+
+            <a class="btn btn-primary btn-sm"
+               href="{{ url_for('payments.payment_new') }}">
+                Record Payment
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-12 col-sm-6 col-xl-4 col-xxl">
+            <div class="card h-100 border-primary-subtle shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">
+                        Active Subscriptions
+                    </div>
+
+                    <div class="fs-4 fw-semibold">
+                        {{ active_subscriptions_count }}
+                    </div>
+
+                    <div class="text-muted small">
+                        Confirmed / Active subscriptions
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-4 col-xxl">
+            <div class="card h-100 border-info-subtle shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">
+                        Total Invoiced
+                    </div>
+
+                    <div class="fs-4 fw-semibold">
+                        {{ '%.2f'|format(total_invoiced) }}
+                    </div>
+
+                    <div class="text-muted small">
+                        Confirmed invoices, excluding drafts and cancelled invoices
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-4 col-xxl">
+            <div class="card h-100 border-success-subtle shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">
+                        Payments Received
+                    </div>
+
+                    <div class="fs-4 fw-semibold">
+                        {{ '%.2f'|format(payments_received) }}
+                    </div>
+
+                    <div class="text-muted small">
+                        Total recorded payments
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-4 col-xxl">
+            <div class="card h-100 border-warning-subtle shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">
+                        Outstanding Balance
+                    </div>
+
+                    <div class="fs-4 fw-semibold {% if total_outstanding > 0 %}text-danger{% else %}text-success{% endif %}">
+                        {{ '%.2f'|format(total_outstanding) }}
+                    </div>
+
+                    <div class="text-muted small">
+                        Remaining amount on open invoices
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-4 col-xxl">
+            <div class="card h-100 border-danger-subtle shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">
+                        Overdue Invoices
+                    </div>
+
+                    <div class="fs-4 fw-semibold {% if overdue_count > 0 %}text-danger{% else %}text-success{% endif %}">
+                        {{ overdue_count }}
+                    </div>
+
+                    <div class="text-muted small">
+                        Due date passed and balance remains
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <span>
+                <strong>Overdue Invoices</strong>
+                <span class="badge text-bg-danger ms-1">{{ overdue_count }}</span>
+            </span>
+
+            <a class="btn btn-sm btn-primary"
+               href="{{ url_for('payments.payment_new') }}">
+                Record Payment
+            </a>
+        </div>
+
+        {% if overdue_invoices %}
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Invoice</th>
+                            <th>Customer</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th class="text-end">Total</th>
+                            <th class="text-end">Paid</th>
+                            <th class="text-end">Outstanding</th>
+                            <th class="text-end">Days Overdue</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for item in overdue_invoices %}
+                            {% set invoice = item.invoice %}
+
+                            <tr>
+                                <td>
+                                    {{ invoice.invoice_number }}
+                                </td>
+
+                                <td>
+                                    {% if invoice.customer is defined and invoice.customer %}
+                                        {{ invoice.customer.name }}
+                                    {% else %}
+                                        Customer #{{ invoice.customer_id }}
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {{ invoice.issue_date or 'N/A' }}
+                                </td>
+
+                                <td>
+                                    {{ invoice.due_date or 'N/A' }}
+                                </td>
+
+                                <td class="text-end">
+                                    {{ '%.2f'|format(invoice.total or 0) }}
+                                </td>
+
+                                <td class="text-end">
+                                    {{ '%.2f'|format(item.paid_amount) }}
+                                </td>
+
+                                <td class="text-end">
+                                    {{ '%.2f'|format(item.outstanding_amount) }}
+                                </td>
+
+                                <td class="text-end">
+                                    <span class="badge text-bg-danger">
+                                        {{ item.days_overdue }} day{{ 's' if item.days_overdue != 1 else '' }}
+                                    </span>
+                                </td>
+
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-outline-primary"
+                                       href="{{ url_for('payments.payment_new', invoice_id=invoice.id) }}">
+                                        Pay
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% else %}
+
+            <div class="card-body">
+                <div class="alert alert-success mb-0">
+                    No overdue invoices found.
+                </div>
+            </div>
+
+        {% endif %}
+    </div>
+
+    <div class="text-muted small mt-3">
+        Total Invoiced excludes draft and cancelled invoices.
+        Payments Received shows recorded payments.
+        Outstanding Balance is calculated as invoice total minus payments received.
+    </div>
+
+</div>
+{% endblock %}
