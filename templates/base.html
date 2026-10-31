@@ -3,14 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Brightloop{% endblock %} — Brightloop</title>
+  <title>{% block title %}Subscription Management System{% endblock %} — Brightloop</title>
 
-  <!-- Bootstrap 5 CDN -->
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
         integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
         crossorigin="anonymous">
-  <!-- Bootstrap Icons -->
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
@@ -24,99 +22,108 @@
     .sidebar-link.active { font-weight: 600; }
   </style>
 
+  {% block head %}{% endblock %}
   {% block extra_css %}{% endblock %}
 </head>
 <body>
 
-<!-- Navigation — Person 3 owns the full nav; this is a functional stub -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
   <div class="container-fluid">
-    <a class="navbar-brand" href="{{ url_for('subscriptions.subscriptions_list') }}">
+    <a class="navbar-brand" href="{{ url_for('dashboard.dashboard') if current_user.is_authenticated and current_user.role|string|lower in ['admin', 'staff'] else url_for('subscriptions.subscriptions_list') }}">
       <i class="bi bi-arrow-repeat"></i> Brightloop
     </a>
+
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-            data-bs-target="#navMain">
+            data-bs-target="#mainNavigation" aria-controls="mainNavigation"
+            aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse" id="navMain">
-      <ul class="navbar-nav me-auto">
+
+    <div class="collapse navbar-collapse" id="mainNavigation">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         {% if current_user.is_authenticated %}
-        <li class="nav-item">
-          <a class="nav-link {% if request.endpoint and 'subscriptions' in request.endpoint %}active{% endif %}"
-             href="{{ url_for('subscriptions.subscriptions_list') }}">
-            <i class="bi bi-journal-check"></i> Subscriptions
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.endpoint and 'quote' in request.endpoint %}active{% endif %}"
-             href="{{ url_for('subscriptions.quotes_list') }}">
-            <i class="bi bi-file-earmark-text"></i> Quotations
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.endpoint and 'invoice' in request.endpoint %}active{% endif %}"
-             href="{{ url_for('subscriptions.invoices_list') }}">
-            <i class="bi bi-receipt"></i> Invoices
-          </a>
-        </li>
-        {% if current_user.role.value in ['Admin', 'Staff'] %}
-        <li class="nav-item">
-          <a class="nav-link {% if request.endpoint and 'price_request' in request.endpoint %}active{% endif %}"
-             href="{{ url_for('subscriptions.price_requests_list') }}">
-            <i class="bi bi-tag"></i> Price Requests
-          </a>
-        </li>
-        {% endif %}
-        {# Person 3 adds: Payments nav item here #}
-        {# Person 1 adds: Products, Plans, Users nav items here #}
+          {% set user_role = current_user.role|string|lower %}
+
+          <!-- ADMIN & STAFF NAVIGATION -->
+          {% if user_role in ['admin', 'staff'] %}
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'dashboard' in request.endpoint %}active{% endif %}" href="{{ url_for('dashboard.dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'catalog.products' in request.endpoint %}active{% endif %}" href="{{ url_for('catalog.products_list') }}"><i class="bi bi-box-seam"></i> Products</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'catalog.plans' in request.endpoint %}active{% endif %}" href="{{ url_for('catalog.plans_list') }}"><i class="bi bi-card-list"></i> Plans</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'subscriptions' in request.endpoint and 'my' not in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.subscriptions_list') }}"><i class="bi bi-journal-check"></i> Subscriptions</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'quote' in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.quotes_list') }}"><i class="bi bi-file-earmark-text"></i> Quotations</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'invoice' in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.invoices_list') }}"><i class="bi bi-receipt"></i> Invoices</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'price_request' in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.price_requests_list') }}"><i class="bi bi-tag"></i> Price Requests</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'payments' in request.endpoint %}active{% endif %}" href="{{ url_for('payments.payment_list') }}"><i class="bi bi-credit-card"></i> Payments</a></li>
+          {% endif %}
+
+          <!-- CUSTOMER NAVIGATION -->
+          {% if user_role == 'customer' %}
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'my_portal' in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.my_portal') }}"><i class="bi bi-person-workspace"></i> My Portal</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'marketplace' in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.marketplace') }}"><i class="bi bi-shop"></i> Marketplace</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'quote' in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.quotes_list') }}"><i class="bi bi-file-earmark-text"></i> My Quotes</a></li>
+            <li class="nav-item"><a class="nav-link {% if request.endpoint and 'invoice' in request.endpoint %}active{% endif %}" href="{{ url_for('subscriptions.invoices_list') }}"><i class="bi bi-receipt"></i> My Invoices</a></li>
+          {% endif %}
         {% endif %}
       </ul>
-      <ul class="navbar-nav ms-auto align-items-center">
+
+      <div class="d-flex align-items-center gap-2 flex-wrap">
         {% if current_user.is_authenticated %}
-        {% if current_user.role.value == 'Customer' %}
-        <li class="nav-item me-2">
-          <a class="btn btn-warning btn-sm text-dark fw-semibold" href="{{ url_for('subscriptions.quote_request') }}">
-            <i class="bi bi-tag-fill"></i> Request a Quote
+          {% set user_role = current_user.role|string|lower %}
+          {% if user_role == 'customer' %}
+            <a class="btn btn-warning btn-sm text-dark fw-semibold" href="{{ url_for('subscriptions.quote_request') }}">
+              <i class="bi bi-tag-fill"></i> Request a Quote
+            </a>
+          {% elif user_role in ['admin', 'staff'] %}
+            <a class="btn btn-success btn-sm" href="/payments/new">
+              <i class="bi bi-plus-circle"></i> Record Payment
+            </a>
+          {% endif %}
+          <span class="navbar-text text-light">
+            {{ current_user.name or current_user.email }}
+            {% if current_user.role %}
+              <span class="badge text-bg-secondary ms-1">{{ current_user.role.value if current_user.role.value is defined else current_user.role }}</span>
+            {% endif %}
+          </span>
+          <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.logout') }}">
+            <i class="bi bi-box-arrow-right"></i> Logout
           </a>
-        </li>
-        {% endif %}
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-            <i class="bi bi-person-circle"></i> {{ current_user.name }}
-            <span class="badge bg-light text-primary ms-1">{{ current_user.role.value }}</span>
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
-              <i class="bi bi-box-arrow-right"></i> Logout</a>
-            </li>
-          </ul>
-        </li>
         {% else %}
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('auth.login') }}">
+          <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.login') }}">
             <i class="bi bi-box-arrow-in-right"></i> Login
           </a>
-        </li>
+          <a class="btn btn-success btn-sm" href="{{ url_for('auth.register') }}">
+            Register
+          </a>
         {% endif %}
-      </ul>
+      </div>
     </div>
   </div>
 </nav>
 
-<!-- Flash messages -->
 <div class="container-fluid px-4">
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {% set alert_class = 'alert-info' %}
+        {% if category == 'success' %}
+          {% set alert_class = 'alert-success' %}
+        {% elif category in ['danger', 'error'] %}
+          {% set alert_class = 'alert-danger' %}
+        {% elif category == 'warning' %}
+          {% set alert_class = 'alert-warning' %}
+        {% endif %}
+        <div class="alert {{ alert_class }} alert-dismissible fade show" role="alert">
           {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"
+                  aria-label="Close"></button>
         </div>
       {% endfor %}
     {% endif %}
   {% endwith %}
 
-  {% block content %}{% endblock %}
+  <main>
+    {% block content %}{% endblock %}
+  </main>
 </div>
 
 <footer class="text-center text-muted small py-4 mt-5">
@@ -126,7 +133,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
         crossorigin="anonymous"></script>
+{% block scripts %}{% endblock %}
 {% block extra_js %}{% endblock %}
 </body>
 </html>
-

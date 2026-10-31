@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block title %}Payments{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+            <h2 class="mb-0">Payments</h2>
+            <div class="text-muted small">
+                Record payments and track invoice balances.
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            {% if payment_form %}
+                <a class="btn btn-outline-secondary btn-sm"
+                   href="{{ url_for('payments.payment_list') }}">
+                    Payment History
+                </a>
+            {% else %}
+                <a class="btn btn-primary btn-sm"
+                   href="{{ url_for('payments.payment_new') }}">
+                    Record Payment
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if payment_form %}
+
+        {% if invoice_options %}
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <strong>Record Payment</strong>
+                </div>
+
+                <div class="card-body">
+                    <form method="post"
+                          action="{{ url_for('payments.payment_new') }}"
+                          class="row g-3">
+
+                        <div class="col-md-6">
+                            <label for="invoice_id" class="form-label">
+                                Invoice <span class="text-danger">*</span>
+                            </label>
+
+                            <select class="form-select"
+                                    id="invoice_id"
+                                    name="invoice_id"
+                                    required>
+                                <option value="">Select invoice</option>
+
+                                {% for option in invoice_options %}
+                                    {% set invoice = option.invoice %}
+                                    <option value="{{ invoice.id }}"
+                                            data-total="{{ '%.2f'|format(invoice.total or 0) }}"
+                                            data-paid="{{ '%.2f'|format(option.paid_amount) }}"
+                                            data-outstanding="{{ '%.2f'|format(option.outstanding) }}"
+                                            data-customer="Customer #{{ invoice.customer_id }}"
+                                            {% if selected_invoice and selected_invoice.id == invoice.id %}selected{% endif %}>
+                                        {{ invoice.invoice_number }}
+                                        — Due {{ invoice.due_date or 'N/A' }}
+                                        — Outstanding {{ '%.2f'|format(option.outstanding) }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+
+                            <div class="form-text">
+                                Only confirmed invoices with an outstanding balance are shown.
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="amount" class="form-label">
+                                Amount <span class="text-danger">*</span>
+                            </label>
+
+                            <input type="number"
+                                   step="0.01"
+                                   min="0.01"
+                                   class="form-control"
+                                   id="amount"
+                                   name="amount"
+                                   required>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="payment_date" class="form-label">
+                                Payment Date <span class="text-danger">*</span>
+                            </label>
+
+                            <input type="date"
+                                   class="form-control"
+                                   id="payment_date"
+                                   name="payment_date"
+                                   value="{{ today }}"
+                                   required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="payment_method" class="form-label">
+                                Payment Method <span class="text-danger">*</span>
+                            </label>
+
+                            <select class="form-select"
+                                    id="payment_method"
+                                    name="payment_method"
+                                    required>
+                                <option value="">Select method</option>
+
+                                {% for method in payment_methods %}
+                                    <option value="{{ method }}">{{ method }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-8">
+                            <label for="note" class="form-label">
+                                Note
+                            </label>
+
+                            <input type="text"
+                                   class="form-control"
+                                   id="note"
+                                   name="note"
+                                   maxlength="255"
+                                   placeholder="Optional payment reference">
+                        </div>
+
+                        <div class="col-12">
+                            <div id="invoice-summary"
+                                 class="alert alert-light border mb-0"
+                                 style="{% if selected_invoice %}display:block;{% else %}display:none;{% endif %}">
+
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <small class="text-muted d-block">Invoice Total</small>
+                                        <strong id="selected-total">
+                                            {% if selected_invoice %}
+                                                {{ '%.2f'|format(selected_invoice.total or 0) }}
+                                            {% else %}
+                                                0.00
+                                            {% endif %}
+                                        </strong>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <small class="text-muted d-block">Amount Paid</small>
+                                        <strong id="selected-paid">
+                                            {{ '%.2f'|format(selected_paid) }}
+                                        </strong>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <small class="text-muted d-block">Outstanding</small>
+                                        <strong id="selected-outstanding">
+                                            {{ '%.2f'|format(selected_outstanding) }}
+                                        </strong>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <small class="text-muted d-block">Customer</small>
+                                        <strong id="selected-customer">
+                                            {% if selected_invoice %}
+                                                {% if selected_invoice.customer is defined and selected_invoice.customer %}
+                                                    {{ selected_invoice.customer.name }}
+                                                {% else %}
+                                                    Customer #{{ selected_invoice.customer_id }}
+                                                {% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-success">
+                                Record Payment
+                            </button>
+
+                            <a class="btn btn-outline-secondary"
+                               href="{{ url_for('payments.payment_list') }}">
+                                Cancel
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+        {% else %}
+
+            <div class="alert alert-info">
+                No confirmed invoices with an outstanding balance are available for payment.
+            </div>
+
+        {% endif %}
+
+    {% endif %}
+
+    {% if not payment_form %}
+
+        <div class="card shadow-sm">
+            <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <span>
+                    <strong>Payment History</strong>
+
+                    {% if selected_invoice %}
+                        — {{ selected_invoice.invoice_number }}
+                    {% endif %}
+                </span>
+
+                <div class="d-flex gap-2">
+                    {% if selected_invoice %}
+                        <a class="btn btn-sm btn-outline-secondary"
+                           href="{{ url_for('payments.payment_list') }}">
+                            Show All Payments
+                        </a>
+                    {% endif %}
+
+                    <a class="btn btn-sm btn-primary"
+                       href="{{ url_for('payments.payment_new') }}{% if selected_invoice %}?invoice_id={{ selected_invoice.id }}{% endif %}">
+                        Record Payment
+                    </a>
+                </div>
+            </div>
+
+            {% if selected_invoice %}
+                <div class="card-body border-bottom">
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">Invoice</small>
+                            <strong>{{ selected_invoice.invoice_number }}</strong>
+                        </div>
+
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">Status</small>
+
+                            {% if selected_invoice.status == 'Paid' %}
+                                <span class="badge text-bg-success">
+                                    {{ selected_invoice.status }}
+                                </span>
+                            {% elif selected_invoice.status == 'Cancelled' %}
+                                <span class="badge text-bg-secondary">
+                                    {{ selected_invoice.status }}
+                                </span>
+                            {% else %}
+                                <span class="badge text-bg-primary">
+                                    {{ selected_invoice.status }}
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">Issue Date</small>
+                            <strong>{{ selected_invoice.issue_date or 'N/A' }}</strong>
+                        </div>
+
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">Due Date</small>
+                            <strong>{{ selected_invoice.due_date or 'N/A' }}</strong>
+                        </div>
+
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">Invoice Total</small>
+                            <strong>{{ '%.2f'|format(selected_invoice.total or 0) }}</strong>
+                        </div>
+
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">Outstanding</small>
+                            <strong>{{ '%.2f'|format(selected_outstanding) }}</strong>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Invoice</th>
+                            <th>Customer</th>
+                            <th>Method</th>
+                            <th>Note</th>
+                            <th class="text-end">Amount</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for row in payment_rows %}
+                            <tr>
+                                <td>{{ row.payment.payment_date }}</td>
+                                <td>{{ row.invoice.invoice_number }}</td>
+                                <td>{{ row.customer.name }}</td>
+                                <td>{{ row.payment.payment_method }}</td>
+                                <td>{{ row.payment.note or '-' }}</td>
+                                <td class="text-end">
+                                    {{ '%.2f'|format(row.payment.amount) }}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    No payments found.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    {% endif %}
+
+</div>
+
+<script>
+    (function () {
+        const invoiceSelect = document.getElementById('invoice_id');
+        const summaryBox = document.getElementById('invoice-summary');
+        const totalElement = document.getElementById('selected-total');
+        const paidElement = document.getElementById('selected-paid');
+        const outstandingElement = document.getElementById('selected-outstanding');
+        const customerElement = document.getElementById('selected-customer');
+
+        function updateInvoiceSummary() {
+            if (!invoiceSelect) {
+                return;
+            }
+
+            const selectedOption = invoiceSelect.options[invoiceSelect.selectedIndex];
+
+            if (!selectedOption || !selectedOption.value) {
+                if (summaryBox) {
+                    summaryBox.style.display = 'none';
+                }
+                return;
+            }
+
+            if (summaryBox) {
+                summaryBox.style.display = 'block';
+            }
+
+            if (totalElement) {
+                totalElement.textContent = selectedOption.dataset.total || '0.00';
+            }
+
+            if (paidElement) {
+                paidElement.textContent = selectedOption.dataset.paid || '0.00';
+            }
+
+            if (outstandingElement) {
+                outstandingElement.textContent = selectedOption.dataset.outstanding || '0.00';
+            }
+
+            if (customerElement) {
+                customerElement.textContent = selectedOption.dataset.customer || '-';
+            }
+        }
+
+        if (invoiceSelect) {
+            invoiceSelect.addEventListener('change', updateInvoiceSummary);
+            document.addEventListener('DOMContentLoaded', updateInvoiceSummary);
+            updateInvoiceSummary();
+        }
+    })();
+</script>
+{% endblock %}

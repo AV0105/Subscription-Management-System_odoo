@@ -7,6 +7,10 @@
     <div class="card shadow-sm">
       <div class="card-header bg-primary text-white text-center py-3">
         <h4 class="mb-0"><i class="bi bi-arrow-repeat"></i> Brightloop Login</h4>
+        <hr>
+        <p class="text-center mb-0">
+            New customer? <a href="{{ url_for('auth.register') }}">Create an Account</a>
+        </p>
       </div>
       <div class="card-body p-4">
         <form method="POST" action="{{ url_for('auth.login') }}">

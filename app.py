@@ -59,7 +59,8 @@ def create_app(config_name: str = None) -> Flask:
     # Person 1 will replace/expand auth_routes.py
     from auth_routes import auth_bp
     app.register_blueprint(auth_bp)
-
+    from person3_routes import register_person3_routes
+    register_person3_routes(app)
     # Person 1 adds catalog_routes when ready:
     # from catalog_routes import catalog_bp
     # app.register_blueprint(catalog_bp)
@@ -67,6 +68,8 @@ def create_app(config_name: str = None) -> Flask:
     # Person 3 adds:
     # from payment_routes import payment_bp
     # app.register_blueprint(payment_bp)
+    from person3_routes import register_person3_routes
+    register_person3_routes(app)
 
     # ── Root redirect ──────────────────────────────────────────────
     @app.route("/")
